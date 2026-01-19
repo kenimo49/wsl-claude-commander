@@ -1,0 +1,49 @@
+# wsl-multi-launcher configuration example
+# Copy this file to config.yaml and customize
+
+# WSL distribution name
+# Run `wsl -l -v` to see available distributions
+wsl_distribution: Ubuntu-24.04
+
+# Target display index
+# 0 = primary display, 1 = secondary display, etc.
+target_display: 1
+
+# Layout configuration
+layout:
+  # Grid format: "COLSxROWS"
+  # Examples: "2x4" (8 windows), "3x3" (9 windows), "2x2" (4 windows)
+  grid: "2x4"
+
+# Window configurations
+# Each window will be placed in the grid from left to right, top to bottom
+windows:
+  - name: "claude-1"
+    command: "claude"
+    working_dir: "~/workspace/project1"
+
+  - name: "claude-2"
+    command: "claude"
+    working_dir: "~/workspace/project2"
+
+  - name: "claude-3"
+    command: "claude"
+    working_dir: "~/workspace/project3"
+
+  - name: "claude-4"
+    command: "claude"
+    working_dir: "~/workspace/project4"
+
+  - name: "shell-1"
+    command: "bash"
+    working_dir: "~"
+
+  - name: "shell-2"
+    command: "bash"
+    working_dir: "~"
+
+  - name: "htop"
+    command: "htop"
+
+  - name: "logs"
+    command: "tail -f /var/log/syslog"

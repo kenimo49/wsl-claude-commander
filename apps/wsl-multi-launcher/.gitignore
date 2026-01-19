@@ -1,0 +1,11 @@
+# Rust build artifacts
+/target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Config files (use config.example.yaml as template)
+config.yaml

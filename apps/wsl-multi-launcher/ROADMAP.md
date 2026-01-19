@@ -5,8 +5,8 @@
 
 | # | タスク | 成果物 | 状態 |
 |---|--------|--------|------|
-| 1.1 | Rustプロジェクト初期化 | `apps/wsl-multi-launcher/` | 未着手 |
-| 1.2 | 基本的な依存関係追加 | `Cargo.toml` (serde, clap, etc.) | 未着手 |
+| 1.1 | Rustプロジェクト初期化 | `apps/wsl-multi-launcher/` | ✅ 完了 |
+| 1.2 | 基本的な依存関係追加 | `Cargo.toml` (serde, clap, etc.) | ✅ 完了 |
 | 1.3 | アプリ用ドキュメント作成 | `README.md`, 設計ドキュメント | ✅ 完了 |
 
 ---
