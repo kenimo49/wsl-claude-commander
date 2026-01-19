@@ -1,0 +1,2 @@
+# wsl-claude-commander
+WSL2上のClaudeを音声入出力とマルチウィンドウで操作するツール
