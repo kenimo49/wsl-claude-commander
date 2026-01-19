@@ -4,6 +4,7 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod config;
+mod wsl;
 
 #[derive(Parser)]
 #[command(name = "wsl-multi-launcher")]
@@ -51,9 +52,20 @@ fn main() -> Result<()> {
         Commands::Launch => {
             info!("Loading config from: {}", cli.config);
             let config = config::load(&cli.config)?;
-            info!("Config loaded: {:?}", config);
-            // TODO: Implement launch logic
-            println!("Launch command - not yet implemented");
+            info!(
+                "Launching {} windows on display {} using {}",
+                config.windows.len(),
+                config.target_display,
+                config.wsl_distribution
+            );
+
+            let launcher = wsl::WslLauncher::new(&config.wsl_distribution);
+            launcher.launch_windows(&config.windows)?;
+
+            println!(
+                "Successfully launched {} windows",
+                config.windows.len()
+            );
         }
         Commands::Config => {
             let config = config::load(&cli.config)?;
