@@ -116,11 +116,126 @@ mod tests {
 
         let layout = LayoutConfig { grid: "3x3".to_string() };
         assert_eq!(layout.parse_grid().unwrap(), (3, 3));
+
+        let layout = LayoutConfig { grid: "1x1".to_string() };
+        assert_eq!(layout.parse_grid().unwrap(), (1, 1));
     }
 
     #[test]
     fn test_parse_grid_invalid() {
         let layout = LayoutConfig { grid: "invalid".to_string() };
         assert!(layout.parse_grid().is_err());
+
+        let layout = LayoutConfig { grid: "2".to_string() };
+        assert!(layout.parse_grid().is_err());
+
+        let layout = LayoutConfig { grid: "axb".to_string() };
+        assert!(layout.parse_grid().is_err());
+    }
+
+    #[test]
+    fn test_parse_yaml_config() {
+        let yaml = r#"
+wsl_distribution: Ubuntu-24.04
+target_display: 1
+layout:
+  grid: "2x2"
+windows:
+  - name: "test-1"
+    command: "bash"
+    working_dir: "~"
+  - name: "test-2"
+    command: "htop"
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.wsl_distribution, "Ubuntu-24.04");
+        assert_eq!(config.target_display, 1);
+        assert_eq!(config.layout.grid, "2x2");
+        assert_eq!(config.windows.len(), 2);
+        assert_eq!(config.windows[0].name, "test-1");
+        assert_eq!(config.windows[0].command, "bash");
+        assert_eq!(config.windows[0].working_dir, Some("~".to_string()));
+        assert_eq!(config.windows[1].name, "test-2");
+        assert_eq!(config.windows[1].command, "htop");
+        assert_eq!(config.windows[1].working_dir, None);
+    }
+
+    #[test]
+    fn test_default_command() {
+        let yaml = r#"
+wsl_distribution: Ubuntu
+layout:
+  grid: "1x1"
+windows:
+  - name: "test"
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.windows[0].command, "bash");
+    }
+
+    #[test]
+    fn test_default_target_display() {
+        let yaml = r#"
+wsl_distribution: Ubuntu
+layout:
+  grid: "1x1"
+windows:
+  - name: "test"
+"#;
+        let config: Config = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(config.target_display, 0);
+    }
+
+    #[test]
+    fn test_validate_empty_windows() {
+        let config = Config {
+            wsl_distribution: "Ubuntu".to_string(),
+            target_display: 0,
+            layout: LayoutConfig { grid: "2x2".to_string() },
+            windows: vec![],
+        };
+        assert!(validate(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_too_many_windows() {
+        let config = Config {
+            wsl_distribution: "Ubuntu".to_string(),
+            target_display: 0,
+            layout: LayoutConfig { grid: "1x1".to_string() },
+            windows: vec![
+                WindowConfig { name: "a".to_string(), command: "bash".to_string(), working_dir: None },
+                WindowConfig { name: "b".to_string(), command: "bash".to_string(), working_dir: None },
+            ],
+        };
+        assert!(validate(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_duplicate_names() {
+        let config = Config {
+            wsl_distribution: "Ubuntu".to_string(),
+            target_display: 0,
+            layout: LayoutConfig { grid: "2x2".to_string() },
+            windows: vec![
+                WindowConfig { name: "same".to_string(), command: "bash".to_string(), working_dir: None },
+                WindowConfig { name: "same".to_string(), command: "bash".to_string(), working_dir: None },
+            ],
+        };
+        assert!(validate(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_success() {
+        let config = Config {
+            wsl_distribution: "Ubuntu".to_string(),
+            target_display: 0,
+            layout: LayoutConfig { grid: "2x2".to_string() },
+            windows: vec![
+                WindowConfig { name: "a".to_string(), command: "bash".to_string(), working_dir: None },
+                WindowConfig { name: "b".to_string(), command: "bash".to_string(), working_dir: None },
+            ],
+        };
+        assert!(validate(&config).is_ok());
     }
 }

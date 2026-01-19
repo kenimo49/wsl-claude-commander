@@ -86,6 +86,7 @@ impl GridLayout {
     }
 
     /// Get the maximum number of windows this grid can hold
+    #[allow(dead_code)]
     pub fn max_windows(&self) -> u32 {
         self.cols * self.rows
     }

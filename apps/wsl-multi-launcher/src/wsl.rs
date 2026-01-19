@@ -55,6 +55,7 @@ impl WslLauncher {
     }
 
     /// Launch multiple windows with a delay between each
+    #[allow(dead_code)]
     pub fn launch_windows(&self, windows: &[WindowConfig]) -> Result<()> {
         for (i, window) in windows.iter().enumerate() {
             self.launch_window(window)?;
