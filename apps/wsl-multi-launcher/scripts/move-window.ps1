@@ -9,6 +9,9 @@ param(
     [Parameter(Mandatory=$false)]
     [string]$Title,
 
+    [Parameter(Mandatory=$false)]
+    [long]$Handle,
+
     [Parameter(Mandatory=$true)]
     [int]$X,
 
@@ -109,12 +112,14 @@ function Get-WindowHandleByTitle {
 # Find the window handle
 $hwnd = [IntPtr]::Zero
 
-if ($ProcessId -gt 0) {
+if ($Handle -gt 0) {
+    $hwnd = [IntPtr]$Handle
+} elseif ($ProcessId -gt 0) {
     $hwnd = Get-WindowHandleByProcessId -ProcessId $ProcessId
 } elseif ($Title) {
     $hwnd = Get-WindowHandleByTitle -Title $Title
 } else {
-    Write-Error "Either -ProcessId or -Title must be specified"
+    Write-Error "Either -Handle, -ProcessId, or -Title must be specified"
     exit 1
 }
 

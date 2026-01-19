@@ -160,42 +160,74 @@ fn main() -> Result<()> {
             let grid = layout::GridLayout::new(cols, rows, display_area);
             let positions = grid.calculate_all_positions(config.windows.len());
 
-            // Launch windows
+            // Launch windows and arrange them immediately after each launch
             let launcher = wsl::WslLauncher::new(&config.wsl_distribution);
 
             println!("Launching {} windows...", config.windows.len());
 
+            // Track window handles for arrangement
+            let mut launched_handles: Vec<i64> = Vec::new();
+
             for (i, window) in config.windows.iter().enumerate() {
                 print!("  [{}] {} ... ", i + 1, window.name);
+
+                // Get existing window handles before launch
+                let handles_before: std::collections::HashSet<i64> =
+                    windows::get_wt_window_handles()
+                        .unwrap_or_default()
+                        .into_iter()
+                        .collect();
+
                 match launcher.launch_window(window) {
-                    Ok(()) => println!("OK"),
+                    Ok(()) => {
+                        // Wait for window to appear
+                        std::thread::sleep(std::time::Duration::from_millis(1000));
+
+                        // Find the new window handle
+                        let handles_after: std::collections::HashSet<i64> =
+                            windows::get_wt_window_handles()
+                                .unwrap_or_default()
+                                .into_iter()
+                                .collect();
+
+                        let new_handles: Vec<i64> = handles_after
+                            .difference(&handles_before)
+                            .copied()
+                            .collect();
+
+                        if let Some(&handle) = new_handles.first() {
+                            launched_handles.push(handle);
+                            println!("OK (handle: {})", handle);
+                        } else {
+                            println!("OK (handle not found)");
+                        }
+                    }
                     Err(e) => {
                         println!("FAILED");
                         warn!("Failed to launch '{}': {}", window.name, e);
                     }
                 }
                 debug!("Window {} launched, position will be {:?}", window.name, positions[i]);
-
-                // Small delay to let window initialize
-                std::thread::sleep(std::time::Duration::from_millis(800));
             }
 
             // Arrange windows if not skipped
-            if !no_arrange {
+            if !no_arrange && !launched_handles.is_empty() {
                 println!();
                 println!("Arranging windows...");
-                // Wait a bit more for all windows to fully initialize
-                std::thread::sleep(std::time::Duration::from_secs(2));
 
-                for (i, window) in config.windows.iter().enumerate() {
+                for (i, &handle) in launched_handles.iter().enumerate() {
+                    if i >= positions.len() {
+                        break;
+                    }
                     let pos = &positions[i];
-                    print!("  [{}] {} ... ", i + 1, window.name);
+                    let window_name = config.windows.get(i).map(|w| w.name.as_str()).unwrap_or("unknown");
+                    print!("  [{}] {} ... ", i + 1, window_name);
 
-                    match windows::move_window_with_retry(&window.name, pos, 3) {
+                    match windows::move_window_by_handle(handle, pos) {
                         Ok(()) => println!("OK"),
                         Err(e) => {
                             println!("FAILED");
-                            warn!("Failed to arrange '{}': {}", window.name, e);
+                            warn!("Failed to arrange '{}': {}", window_name, e);
                         }
                     }
                 }

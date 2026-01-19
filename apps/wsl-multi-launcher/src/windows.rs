@@ -163,6 +163,80 @@ pub fn move_window_with_retry(title: &str, rect: &Rect, max_retries: u32) -> Res
     Ok(())
 }
 
+/// Get all Windows Terminal window handles
+pub fn get_wt_window_handles() -> Result<Vec<i64>> {
+    let scripts_dir = get_scripts_dir()?;
+    let script_path = scripts_dir.join("get-wt-windows.ps1");
+    let win_script_path = wsl_to_windows_path(&script_path)?;
+
+    let output = Command::new("powershell.exe")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", &win_script_path,
+        ])
+        .output()
+        .context("Failed to execute get-wt-windows.ps1")?;
+
+    if !output.status.success() {
+        anyhow::bail!(
+            "get-wt-windows.ps1 failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let json = String::from_utf8_lossy(&output.stdout);
+    let json = json.trim();
+
+    // Parse JSON - can be single number, array, or null
+    if json.is_empty() || json == "null" {
+        return Ok(vec![]);
+    }
+
+    let handles: Vec<i64> = if json.starts_with('[') {
+        serde_json::from_str(json).unwrap_or_default()
+    } else {
+        // Single handle
+        json.parse::<i64>().map(|h| vec![h]).unwrap_or_default()
+    };
+
+    Ok(handles)
+}
+
+/// Move a window by its handle
+pub fn move_window_by_handle(handle: i64, rect: &Rect) -> Result<()> {
+    let scripts_dir = get_scripts_dir()?;
+    let script_path = scripts_dir.join("move-window.ps1");
+    let win_script_path = wsl_to_windows_path(&script_path)?;
+
+    debug!(
+        "Moving window handle {} to ({}, {}, {}x{})",
+        handle, rect.x, rect.y, rect.width, rect.height
+    );
+
+    let output = Command::new("powershell.exe")
+        .args([
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", &win_script_path,
+            "-Handle", &handle.to_string(),
+            "-X", &rect.x.to_string(),
+            "-Y", &rect.y.to_string(),
+            "-Width", &rect.width.to_string(),
+            "-Height", &rect.height.to_string(),
+        ])
+        .output()
+        .context("Failed to execute move-window.ps1")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("move-window.ps1 failed: {}", stderr);
+    }
+
+    info!("Window handle {} moved successfully", handle);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

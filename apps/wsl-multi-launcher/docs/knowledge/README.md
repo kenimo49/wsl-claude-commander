@@ -10,7 +10,9 @@ tags: [knowledge, implementation, best-practices]
 
 ## ドキュメント一覧
 
-*現在、ドキュメントはありません。*
+| ドキュメント | 説明 | 優先度 |
+|-------------|------|--------|
+| [window-handle-tracking.md](./window-handle-tracking.md) | ウィンドウハンドル追跡の実装ノウハウ | ⭐⭐⭐ |
 
 ## このディレクトリの目的
 

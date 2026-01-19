@@ -25,19 +25,14 @@ impl WslLauncher {
         let wsl_command = self.build_wsl_command(window);
         debug!("WSL command: {}", wsl_command);
 
-        // Use cmd.exe to start Windows Terminal with a new window
-        // wt.exe -w new creates a new window
-        let mut cmd = Command::new("cmd.exe");
+        // Use wt.exe directly with new-tab (nt) and --title option
+        let mut cmd = Command::new("wt.exe");
         cmd.args([
-            "/c",
-            "start",
-            "",  // Empty title
-            "wt.exe",
-            "-w", "new",  // New window
-            "wsl.exe",
-            "-d", &self.distribution,
-            "--",
-            "bash", "-c", &wsl_command,
+            "-w", "new",
+            "nt",  // new-tab subcommand
+            "--title", &window.name,
+            "wsl.exe", "-d", &self.distribution,
+            "--", "bash", "-c", &wsl_command,
         ]);
 
         debug!("Executing: {:?}", cmd);

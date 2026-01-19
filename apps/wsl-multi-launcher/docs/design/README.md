@@ -10,7 +10,11 @@ tags: [design, architecture, decisions]
 
 ## ドキュメント一覧
 
-*現在、ドキュメントはありません。今後、以下を追加予定:*
+| ドキュメント | 説明 | 優先度 |
+|-------------|------|--------|
+| [window-tracking-strategy.md](./window-tracking-strategy.md) | ウィンドウ追跡戦略の設計判断 | ⭐⭐⭐ |
+
+### 今後追加予定
 
 - `architecture.md` - 全体アーキテクチャ
 - `hybrid-approach.md` - WSL+PowerShellハイブリッド設計
