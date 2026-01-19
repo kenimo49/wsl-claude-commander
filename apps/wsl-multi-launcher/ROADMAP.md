@@ -39,10 +39,10 @@
 
 | # | タスク | 成果物 | 状態 |
 |---|--------|--------|------|
-| 4.1 | ディスプレイ情報取得スクリプト | `scripts/get-displays.ps1` | 未着手 |
-| 4.2 | ウィンドウ移動スクリプト | `scripts/move-window.ps1` | 未着手 |
-| 4.3 | グリッド座標計算の実装 | `src/layout.rs` | 未着手 |
-| 4.4 | Rust→PowerShell連携 | `src/windows.rs` | 未着手 |
+| 4.1 | ディスプレイ情報取得スクリプト | `scripts/get-displays.ps1` | ✅ 完了 |
+| 4.2 | ウィンドウ移動スクリプト | `scripts/move-window.ps1` | ✅ 完了 |
+| 4.3 | グリッド座標計算の実装 | `src/layout.rs` | ✅ 完了 |
+| 4.4 | Rust→PowerShell連携 | `src/windows.rs` | ✅ 完了 |
 
 ---
 
