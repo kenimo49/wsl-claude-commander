@@ -151,6 +151,11 @@ class VoiceDaemon:
             return False
 
         try:
+            # Add voice input prefix if configured
+            prefix = self.config.claude.voice_input_prefix
+            if prefix:
+                text = f"{prefix}{text}"
+
             logger.info("Sending to Claude...", text=text[:50])
 
             # Run in thread pool to avoid blocking

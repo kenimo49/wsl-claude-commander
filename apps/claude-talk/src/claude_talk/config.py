@@ -84,6 +84,8 @@ class ClaudeConfig(BaseModel):
     restore_window: bool = True
     monitor_method: Literal["log", "terminal"] = "log"
     log_path: str | None = None
+    # Prefix to add to voice input (e.g., "[音声入力] ")
+    voice_input_prefix: str | None = "[音声入力] "
 
 
 class VADConfig(BaseModel):
