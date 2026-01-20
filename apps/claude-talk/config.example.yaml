@@ -1,0 +1,97 @@
+# claude-talk configuration
+# Copy this file to config.yaml and customize
+
+# Speech-to-Text (STT) settings
+stt:
+  # Mode: "free" (local Vosk) or "paid" (OpenAI Whisper API)
+  mode: "free"
+
+  # Free mode settings (Vosk - local, CPU-optimized)
+  free:
+    engine: "vosk"
+    language: "ja"
+    # Model will be auto-downloaded if not exists
+    model_path: "~/.claude-talk/models/vosk-model-small-ja-0.22"
+
+  # Paid mode settings (OpenAI Whisper API)
+  paid:
+    engine: "openai"
+    # API key from environment variable
+    api_key: "${OPENAI_API_KEY}"
+    language: "ja"
+    model: "whisper-1"
+
+# Text-to-Speech (TTS) settings
+tts:
+  engine: "edge-tts"
+  # Japanese voices: ja-JP-NanamiNeural (female), ja-JP-KeitaNeural (male)
+  voice: "ja-JP-NanamiNeural"
+  # Mode: "full" (read all output) or "notify" (status notifications only)
+  mode: "full"
+  # Speech rate adjustment (-50% to +50%)
+  rate: "+0%"
+  # Volume adjustment (-50% to +50%)
+  volume: "+0%"
+
+  # Notify mode settings (for long outputs)
+  notify:
+    # Speaker for notifications (null = default)
+    speaker: null
+    # Notification messages
+    sounds:
+      completed: "完了しました"
+      ask: "確認があります"
+      error: "エラーが発生しました"
+
+# Hotword detection settings
+hotword:
+  # Engine: "porcupine" (requires API key) or "simple" (energy-based, no key required)
+  engine: "simple"
+  # Wake word (Porcupine built-in keywords: alexa, hey google, hey siri, ok google, picovoice)
+  word: "hey google"
+  # Detection threshold (0.0-1.0, lower = more sensitive)
+  threshold: 0.5
+  # Porcupine access key (get free key at https://console.picovoice.ai/)
+  # Set via environment variable or directly here
+  access_key: "${PICOVOICE_ACCESS_KEY}"
+
+# Claude integration settings
+claude:
+  # Window title pattern for Claude Code (partial match)
+  window_title: "claude"
+  # Restore original window after sending input
+  restore_window: true
+  # How to monitor Claude output: "log" or "terminal"
+  monitor_method: "log"
+  # Log file path (for log monitoring)
+  log_path: null
+
+# Audio device settings
+audio:
+  # Input device: index (0, 1, ...), name ("pulse"), or null (default)
+  input_device: null
+  # Output device: index (0, 1, ...), name ("pulse"), or null (default)
+  output_device: null
+  # Sample rate in Hz
+  sample_rate: 16000
+  # Chunk size for audio processing
+  chunk_size: 1024
+
+  # Voice Activity Detection settings
+  vad:
+    enabled: true
+    # Aggressiveness (0-3, higher = more aggressive noise filtering)
+    aggressiveness: 2
+    # Silence duration to stop recording (milliseconds)
+    silence_duration: 1500
+    # Minimum speech duration to process (milliseconds)
+    min_speech_duration: 500
+
+# Daemon settings
+daemon:
+  # PID file location
+  pid_file: "~/.claude-talk/claude-talk.pid"
+  # Log file location
+  log_file: "~/.claude-talk/claude-talk.log"
+  # Log level: debug, info, warning, error
+  log_level: "info"
