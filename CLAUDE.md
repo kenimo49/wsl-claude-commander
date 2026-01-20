@@ -36,12 +36,9 @@ graph TD
 ```
 wsl-claude-commander/
 ├── apps/                     # アプリケーション
-│   ├── voice-input/          # 音声入力アプリ
-│   ├── voice-output/         # 音声出力アプリ
-│   └── window-manager/       # ウィンドウ管理アプリ
-├── packages/                 # 共有パッケージ
-│   ├── shared/               # 共有ライブラリ
-│   └── config/               # 共通設定
+│   ├── wsl-multi-launcher/   # WSLマルチウィンドウランチャー
+│   └── claude-talk/          # 音声インターフェース
+├── packages/                 # 共有パッケージ（準備中）
 └── docs/                     # ドキュメント
 ```
 

@@ -4,9 +4,8 @@ WSL2上のClaudeを音声入出力とマルチウィンドウで操作するツ�
 
 ## 機能
 
-- **音声入力**: 指定したマイクから音声認識でClaudeにテキスト入力
-- **音声出力**: Claudeの出力を指定したスピーカーで読み上げ
-- **マルチウィンドウ**: WSLウィンドウを複数起動し、指定ディスプレイに8分割表示
+- **音声インターフェース**: "Hey Claude"で起動、音声入力と読み上げ
+- **マルチウィンドウ**: WSLウィンドウを複数起動し、グリッド配置
 
 ## プロジェクト構造
 
@@ -16,10 +15,8 @@ WSL2上のClaudeを音声入出力とマルチウィンドウで操作するツ�
 wsl-claude-commander/
 ├── apps/                     # アプリケーション
 │   ├── wsl-multi-launcher/   # WSLマルチウィンドウランチャー ✅
-│   ├── voice-input/          # 音声入力アプリ（準備中）
-│   └── voice-output/         # 音声出力アプリ（準備中）
-├── packages/                 # 共有パッケージ
-│   └── (準備中)
+│   └── claude-talk/          # 音声インターフェース ✅
+├── packages/                 # 共有パッケージ（準備中）
 ├── docs/                     # ドキュメント
 │   ├── README.md             # ドキュメントインデックス
 │   ├── ARCHITECTURE.md       # システムアーキテクチャ
@@ -38,89 +35,41 @@ wsl-claude-commander/
 | アプリ | 説明 | 状態 |
 |-------|------|------|
 | [wsl-multi-launcher](apps/wsl-multi-launcher/) | WSLウィンドウを複数起動しグリッド配置 | ✅ 完成 |
-| voice-input | 音声認識でClaudeにテキスト入力 | 準備中 |
-| voice-output | Claudeの応答を音声で読み上げ | 準備中 |
+| [claude-talk](apps/claude-talk/) | Claude Codeとの双方向音声インターフェース | ✅ 完成 |
 
 ---
 
 ## wsl-multi-launcher
 
-WSL (Ubuntu 24.04) を指定して、特定のディスプレイに複数のウィンドウをグリッド配置するCLIツール。
-
-### 主な機能
-
-- 指定したWSLディストリビューションでWindows Terminalを起動
-- 特定のディスプレイを指定して配置
-- グリッド分割（2x4, 3x3など）で自動配置
-- 各ウィンドウで異なるコマンド・作業ディレクトリを指定可能
+WSLウィンドウを複数起動し、グリッド配置するCLIツール。
 
 ### クイックスタート
 
 ```bash
 cd apps/wsl-multi-launcher
-
-# ビルド
 cargo build --release
-
-# 設定ファイルを生成（2x4グリッド、8ウィンドウ）
 cargo run -- init --grid 2x4 --windows 8
-
-# ディスプレイを確認
-cargo run -- displays
-
-# 起動
 cargo run -- launch
 ```
 
-### アーキテクチャ
+詳細は [apps/wsl-multi-launcher/README.md](apps/wsl-multi-launcher/README.md) を参照。
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    WSL (Ubuntu 24.04)               │
-│  ┌───────────────────────────────────────────────┐  │
-│  │           wsl-multi-launcher (Rust)           │  │
-│  │  ┌─────────┐ ┌─────────┐ ┌─────────────────┐  │  │
-│  │  │ config  │ │   wsl   │ │     layout      │  │  │
-│  │  │ (YAML)  │ │ launcher│ │ (grid calc)     │  │  │
-│  │  └─────────┘ └─────────┘ └─────────────────┘  │  │
-│  └───────────────────┬───────────────────────────┘  │
-│                      │ PowerShell呼び出し            │
-└──────────────────────┼──────────────────────────────┘
-                       ▼
-┌─────────────────────────────────────────────────────┐
-│                    Windows Host                      │
-│  ┌───────────────────────────────────────────────┐  │
-│  │              PowerShell Scripts               │  │
-│  │  ┌─────────────────┐ ┌─────────────────────┐  │  │
-│  │  │  get-displays   │ │    move-window      │  │  │
-│  │  └─────────────────┘ └─────────────────────┘  │  │
-│  └───────────────────────────────────────────────┘  │
-│                                                     │
-│  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐                   │
-│  │ WSL │ │ WSL │ │ WSL │ │ WSL │  ← Windows Terminal │
-│  │ Win │ │ Win │ │ Win │ │ Win │                     │
-│  └─────┘ └─────┘ └─────┘ └─────┘                   │
-└─────────────────────────────────────────────────────┘
+---
+
+## claude-talk
+
+Claude Codeとの双方向音声インターフェース。
+
+### クイックスタート
+
+```bash
+cd apps/claude-talk
+pip install -e .
+claude-talk init
+claude-talk start
 ```
 
-### 設定例
-
-```yaml
-wsl_distribution: Ubuntu-24.04
-target_display: 1
-layout:
-  grid: "2x4"
-windows:
-  - name: "claude-1"
-    command: "claude"
-    working_dir: "~/workspace/project1"
-  - name: "claude-2"
-    command: "claude"
-    working_dir: "~/workspace/project2"
-  # ... 最大8ウィンドウ
-```
-
-詳細は [apps/wsl-multi-launcher/README.md](apps/wsl-multi-launcher/README.md) を参照してください。
+詳細は [apps/claude-talk/README.md](apps/claude-talk/README.md) を参照。
 
 ---
 
