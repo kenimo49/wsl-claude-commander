@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Callable
 
+import numpy as np
+
 from claude_talk.config import Config
 from claude_talk.utils.logging import get_logger, setup_logging
 from claude_talk.utils.paths import expand_path
@@ -98,7 +100,9 @@ class VoiceDaemon:
             recorder = AudioRecorder(
                 device=self.config.audio.input_device,
                 sample_rate=self.config.audio.sample_rate,
+                silence_threshold=0.03,  # Higher threshold for noisy environments
                 silence_duration=self.config.audio.vad.silence_duration / 1000.0,
+                max_duration=10.0,  # Limit to 10 seconds for better recognition
             )
 
             logger.info("Recording voice input...")
@@ -136,25 +140,82 @@ class VoiceDaemon:
     async def _main_loop(self) -> None:
         """Main processing loop."""
         logger.info("Starting main loop")
-        logger.info("Listening for hotword: " + self.config.hotword.word)
+        logger.info("Listening for voice activity...")
 
-        # Notify start
-        if self.config.tts.mode == "full":
-            await self._speak("claude-talk を開始しました")
+        # Notify start (temporarily disabled for testing)
+        # if self.config.tts.mode == "full":
+        #     await self._speak("claude-talk を開始しました")
+        logger.info("TTS notification skipped for testing")
 
-        while self._running:
-            try:
-                # TODO: Implement proper hotword detection with audio capture
-                # For now, this is a simplified version
+        # Import audio capture
+        from claude_talk.audio import AudioCapture
 
-                # Wait for user input (placeholder)
-                await asyncio.sleep(0.1)
+        # Create audio capture for continuous monitoring
+        capture = AudioCapture(
+            device=self.config.audio.input_device,
+            sample_rate=self.config.audio.sample_rate,
+            chunk_size=self.config.audio.chunk_size,
+        )
 
-            except asyncio.CancelledError:
-                break
-            except Exception as e:
-                logger.error("Error in main loop", error=str(e))
-                await asyncio.sleep(1)
+        # Voice activity detection parameters
+        energy_threshold = 0.02  # RMS threshold for voice activity
+        activation_chunks = 3  # Number of chunks above threshold to start recording
+        active_count = 0
+
+        logger.info("Starting audio monitoring", threshold=energy_threshold)
+
+        try:
+            capture.start()
+
+            while self._running:
+                try:
+                    # Read audio chunk (non-blocking with timeout)
+                    audio_chunk = capture.read(timeout=0.1)
+                    if audio_chunk is None:
+                        await asyncio.sleep(0.01)
+                        continue
+
+                    # Calculate energy (RMS)
+                    energy = float(np.sqrt(np.mean(audio_chunk**2)))
+
+                    # Check for voice activity
+                    if energy > energy_threshold:
+                        active_count += 1
+                        if active_count >= activation_chunks:
+                            logger.info("Voice activity detected", energy=f"{energy:.4f}")
+
+                            # Stop monitoring capture
+                            capture.stop()
+
+                            # Record full utterance
+                            text = await self._process_voice_input()
+
+                            if text:
+                                logger.info("=== Recognized ===", text=text)
+
+                                # TODO: Send to Claude
+                                # For now, just speak back the recognized text
+                                if self.config.tts.mode == "full":
+                                    await self._speak(f"認識しました: {text[:50]}")
+
+                            # Reset and restart monitoring
+                            active_count = 0
+                            capture.start()
+                            logger.info("Resuming audio monitoring...")
+                    else:
+                        active_count = 0
+
+                    # Small delay to prevent CPU spinning
+                    await asyncio.sleep(0.01)
+
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    logger.error("Error in main loop iteration", error=str(e))
+                    await asyncio.sleep(0.5)
+
+        finally:
+            capture.stop()
 
     def run_foreground(self) -> None:
         """Run daemon in foreground mode."""
