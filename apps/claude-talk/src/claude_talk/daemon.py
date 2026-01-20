@@ -137,6 +137,40 @@ class VoiceDaemon:
         except Exception as e:
             logger.error("TTS failed", error=str(e))
 
+    async def _send_to_claude(self, text: str) -> bool:
+        """Send text to Claude Code window.
+
+        Args:
+            text: Text to send.
+
+        Returns:
+            True if successful.
+        """
+        if not self._input_sender:
+            logger.error("Input sender not initialized")
+            return False
+
+        try:
+            logger.info("Sending to Claude...", text=text[:50])
+
+            # Run in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            success = await loop.run_in_executor(
+                None,
+                lambda: self._input_sender.send(text, auto_submit=True)
+            )
+
+            if success:
+                logger.info("Sent to Claude successfully")
+            else:
+                logger.error("Failed to send to Claude")
+
+            return success
+
+        except Exception as e:
+            logger.error("Send to Claude failed", error=str(e))
+            return False
+
     async def _main_loop(self) -> None:
         """Main processing loop."""
         logger.info("Starting main loop")
@@ -193,10 +227,8 @@ class VoiceDaemon:
                             if text:
                                 logger.info("=== Recognized ===", text=text)
 
-                                # TODO: Send to Claude
-                                # For now, just speak back the recognized text
-                                if self.config.tts.mode == "full":
-                                    await self._speak(f"認識しました: {text[:50]}")
+                                # Send to Claude
+                                await self._send_to_claude(text)
 
                             # Reset and restart monitoring
                             active_count = 0

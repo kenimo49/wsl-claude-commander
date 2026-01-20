@@ -1,9 +1,5 @@
-# Activate a window by handle or title
-# Usage: powershell.exe -File activate-window.ps1 -Handle 12345
-# Usage: powershell.exe -File activate-window.ps1 -Title "claude"
-
 param(
-    [long]$Handle = 0,
+    [int64]$Handle = 0,
     [string]$Title = ""
 )
 
@@ -23,54 +19,41 @@ public class WindowActivator {
     public static extern bool IsIconic(IntPtr hWnd);
 
     [DllImport("user32.dll")]
-    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-    [DllImport("user32.dll")]
-    public static extern int GetWindowTextLength(IntPtr hWnd);
+    public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowVisible(IntPtr hWnd);
 
+    [DllImport("user32.dll")]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
     public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     public const int SW_RESTORE = 9;
-    public const int SW_SHOW = 5;
 
     public static IntPtr FindWindowByTitle(string pattern) {
         IntPtr found = IntPtr.Zero;
-
         EnumWindows((hWnd, lParam) => {
             if (!IsWindowVisible(hWnd)) return true;
 
-            int length = GetWindowTextLength(hWnd);
-            if (length == 0) return true;
+            StringBuilder title = new StringBuilder(256);
+            GetWindowText(hWnd, title, 256);
+            string titleStr = title.ToString();
 
-            StringBuilder sb = new StringBuilder(length + 1);
-            GetWindowText(hWnd, sb, sb.Capacity);
-            string title = sb.ToString();
-
-            if (title.ToLower().Contains(pattern.ToLower())) {
+            if (titleStr.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0) {
                 found = hWnd;
-                return false; // Stop enumeration
+                return false;
             }
-
             return true;
         }, IntPtr.Zero);
-
         return found;
     }
 
-    public static bool ActivateWindow(IntPtr hWnd) {
+    public static bool Activate(IntPtr hWnd) {
         if (hWnd == IntPtr.Zero) return false;
 
-        // Restore if minimized
         if (IsIconic(hWnd)) {
             ShowWindow(hWnd, SW_RESTORE);
-        } else {
-            ShowWindow(hWnd, SW_SHOW);
         }
 
         return SetForegroundWindow(hWnd);
@@ -78,22 +61,22 @@ public class WindowActivator {
 }
 "@
 
-$targetHandle = [IntPtr]::Zero
+$success = $false
+$hWnd = [IntPtr]::Zero
 
 if ($Handle -ne 0) {
-    $targetHandle = [IntPtr]$Handle
-} elseif ($Title -ne "") {
-    $targetHandle = [WindowActivator]::FindWindowByTitle($Title)
+    $hWnd = [IntPtr]$Handle
+} elseif (-not [string]::IsNullOrEmpty($Title)) {
+    $hWnd = [WindowActivator]::FindWindowByTitle($Title)
 }
 
-if ($targetHandle -eq [IntPtr]::Zero) {
-    @{ success = $false; error = "Window not found" } | ConvertTo-Json
-    exit 1
+if ($hWnd -ne [IntPtr]::Zero) {
+    $success = [WindowActivator]::Activate($hWnd)
 }
 
-$result = [WindowActivator]::ActivateWindow($targetHandle)
+$result = @{
+    success = $success
+    handle = $hWnd.ToInt64()
+}
 
-@{
-    success = $result
-    handle = $targetHandle.ToInt64()
-} | ConvertTo-Json
+$result | ConvertTo-Json -Compress

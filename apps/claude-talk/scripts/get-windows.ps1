@@ -1,76 +1,75 @@
-# Get windows matching a title pattern
-# Usage: powershell.exe -File get-windows.ps1 -TitlePattern "claude"
-
 param(
     [string]$TitlePattern = ""
 )
 
 Add-Type @"
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Collections.Generic;
 
 public class WindowHelper {
     [DllImport("user32.dll")]
-    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+    public static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll")]
-    public static extern int GetWindowTextLength(IntPtr hWnd);
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowVisible(IntPtr hWnd);
 
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
-
     public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
-    public static List<object[]> GetWindows(string pattern) {
-        var windows = new List<object[]>();
+    public static List<Tuple<IntPtr, string>> Windows = new List<Tuple<IntPtr, string>>();
 
-        EnumWindows((hWnd, lParam) => {
-            if (!IsWindowVisible(hWnd)) return true;
+    public static bool EnumWindowCallback(IntPtr hWnd, IntPtr lParam) {
+        if (!IsWindowVisible(hWnd)) return true;
 
-            int length = GetWindowTextLength(hWnd);
-            if (length == 0) return true;
+        StringBuilder title = new StringBuilder(256);
+        GetWindowText(hWnd, title, 256);
+        string titleStr = title.ToString();
 
-            StringBuilder sb = new StringBuilder(length + 1);
-            GetWindowText(hWnd, sb, sb.Capacity);
-            string title = sb.ToString();
-
-            if (string.IsNullOrEmpty(pattern) || title.ToLower().Contains(pattern.ToLower())) {
-                windows.Add(new object[] { hWnd.ToInt64(), title });
-            }
-
-            return true;
-        }, IntPtr.Zero);
-
-        return windows;
+        if (!string.IsNullOrWhiteSpace(titleStr)) {
+            Windows.Add(new Tuple<IntPtr, string>(hWnd, titleStr));
+        }
+        return true;
     }
 
-    public static long GetForegroundWindowHandle() {
-        return GetForegroundWindow().ToInt64();
+    public static void GetAllWindows() {
+        Windows.Clear();
+        EnumWindows(EnumWindowCallback, IntPtr.Zero);
     }
 }
 "@
 
-$windows = [WindowHelper]::GetWindows($TitlePattern)
-$foreground = [WindowHelper]::GetForegroundWindowHandle()
+# Get all windows
+[WindowHelper]::GetAllWindows()
 
-$result = @{
-    windows = @()
-    foreground = $foreground
-}
+# Get foreground window
+$foreground = [WindowHelper]::GetForegroundWindow()
 
-foreach ($win in $windows) {
-    $result.windows += @{
-        handle = $win[0]
-        title = $win[1]
+# Filter windows by pattern
+$windows = @()
+foreach ($win in [WindowHelper]::Windows) {
+    $handle = $win.Item1.ToInt64()
+    $title = $win.Item2
+
+    if ([string]::IsNullOrEmpty($TitlePattern) -or $title -like "*$TitlePattern*") {
+        $windows += @{
+            handle = $handle
+            title = $title
+        }
     }
 }
 
-$result | ConvertTo-Json -Depth 3
+# Output JSON
+$result = @{
+    success = $true
+    foreground = $foreground.ToInt64()
+    windows = $windows
+}
+
+$result | ConvertTo-Json -Compress
