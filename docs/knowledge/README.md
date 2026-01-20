@@ -10,7 +10,7 @@
 
 | ファイル | 説明 | 優先度 |
 |---------|------|--------|
-| (準備中) | | |
+| [claude-code-hooks.md](claude-code-hooks.md) | Claude Code Hooks設定ガイド | ⭐⭐ |
 
 ## ユースケース別ガイド
 

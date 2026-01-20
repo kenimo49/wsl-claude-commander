@@ -86,6 +86,47 @@ audio:
   output_device: 1  # スピーカー番号
 ```
 
+### 音声入力プレフィックス
+
+```yaml
+claude:
+  voice_input_prefix: "[音声入力] "  # 音声入力を識別するプレフィックス
+```
+
+## Claude Code Hooks設定
+
+Claudeの応答を自動で読み上げるには、Claude CodeのStop hookを設定します。
+
+### 設定手順
+
+`~/.claude/settings.json` に以下を追加：
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /path/to/claude-talk/scripts/speak_response.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 動作
+
+1. 音声入力時、メッセージに `[音声入力]` プレフィックスが付与される
+2. Claudeが応答完了すると、Stop hookが発火
+3. `speak_response.py` がセッションファイルを確認
+4. 音声入力への応答のみをTTSで読み上げ
+
+詳細は [docs/knowledge/claude-code-hooks.md](../../docs/knowledge/claude-code-hooks.md) を参照。
+
 ## ライセンス
 
 MIT
