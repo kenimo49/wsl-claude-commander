@@ -2,6 +2,9 @@ param(
     [string]$TitlePattern = ""
 )
 
+# Set UTF-8 output encoding
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
